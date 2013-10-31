@@ -1,0 +1,12 @@
+[submodule "externals/emscripten"]
+	path = externals/emscripten
+	url = git@github.com:kripken/emscripten.git
+[submodule "externals/llvm"]
+	path = externals/llvm
+	url = https://github.com/llvm-mirror/llvm.git
+[submodule "externals/clang"]
+	path = externals/clang
+	url = https://github.com/llvm-mirror/clang.git
+[submodule "externals/compiler-rt"]
+	path = externals/compiler-rt
+	url = https://github.com/llvm-mirror/compiler-rt.git
