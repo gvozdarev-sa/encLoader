@@ -1,0 +1,22 @@
+{
+    "name"          : "encloader",
+    "fullName"      : "encLoader",
+    "description"   : "Firefox extension for an encryption on fly",
+    "version"       : "alpha",
+    "url"           : "https://github.com/gvozdarev-sa/encLoader",
+
+    "author"        : "gvozdarev-sa",
+    "contributors"  : [],
+    "license"       : "The MIT License (MIT)",
+    "id": "jid0-lrL5jItVY1n5xBnMQHBgdAXmAR0",
+
+    "preferences":
+    [
+        { "title": "password for encryption", "type": "string", "description": "password for encryption", "value": "change this", "name": "password"},
+        {"on": "1", "off": "0", "name": "encryption_enabled", "title": "Enable encryption", "value": 1, "type": "boolint"},
+        {"on": "1", "off": "0", "name": "compression_enabled", "title": "Enable compression", "value": 1, "type": "boolint"}
+    ],
+    "dependencies": [ "api-utils", "addon-kit"],
+    "lib": "lib",
+    "main": "main"
+}
