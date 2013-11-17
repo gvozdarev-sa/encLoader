@@ -1,6 +1,6 @@
 [submodule "externals/emscripten"]
 	path = externals/emscripten
-	url = https://github.com:kripken/emscripten.git
+	url = https://github.com/kripken/emscripten.git
 [submodule "externals/llvm"]
 	path = externals/llvm
 	url = https://github.com/llvm-mirror/llvm.git
@@ -13,6 +13,4 @@
 [submodule "externals/addon-sdk"]
 	path = externals/addon-sdk
 	url = https://github.com/mozilla/addon-sdk.git
-[submodule "externals/multipart-parser"]
-	path = externals/multipart-parser
-	url = https://github.com/FooBarWidget/multipart-parser.git
+
