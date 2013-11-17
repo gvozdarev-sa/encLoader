@@ -10,13 +10,13 @@ clang: git_llvm git_clang git_compiler-rt
 git_all: git_llvm git_clang git_compiler-rt git_emscripten git_addon-sdk
 
 git_llvm:
-	git submodule update ./llvm
+	git submodule update --init ./llvm
 git_clang:
-	git submodule update ./clang
+	git submodule update --init ./clang
 git_compiler-rt:
-	git submodule update ./compiler-rt
+	git submodule update --init ./compiler-rt
 git_emscripten:
-	git submodule update ./emscripten
+	git submodule update --init ./emscripten
 git_addon-sdk:
-	git submodule update ./addon-sdk
+	git submodule update --init ./addon-sdk
 
