@@ -18,7 +18,6 @@
 
 
 #include "Rijndael.h"
-#include "Rijndael.cpp"
 
 #define BLOCK_SIZE 16
 #define KEY_LENGTH 16
@@ -28,7 +27,7 @@ class AES: CRijndael
 {
 public:
 	unsigned int get_encrypted_array_size(unsigned int user_array_size);
-	void encryption(char *key, char * user_array, char* encrypted_array, unsigned int user_array_size);
-	void decryption(char *key, char * encrypted_array, char* decrypted_array, unsigned int decrypted_array_size);
+	void encryption(char* chain, char *key, char * user_array, char* encrypted_array, unsigned int user_array_size);
+	void decryption(char *key, char * encrypted_array, char* decrypted_array, unsigned int encrypted_array_size, unsigned int* data_size);
 };
 
