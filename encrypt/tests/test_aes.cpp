@@ -1,4 +1,4 @@
-#include "../src/AES_wrapper.hpp"
+#include "AES_wrapper.hpp"
 #include <iostream>
 #include <cstring>
 #include <stdio.h>
