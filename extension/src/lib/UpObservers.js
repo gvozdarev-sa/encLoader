@@ -50,9 +50,9 @@ UpHelper.prototype =
         ret.header = bodyHeader[ 1] + bodyHeader[ 2] + "Content-Type: application/octet-stream\r\n\r\n";
         ret.body = bodyHeader[ 4];
         
-        console.log( "first.body1:" + str);
-        console.log( "first.body2:" + ret.body);
-        console.log( "first.body3:" + tmp);
+//        console.log( "first.body1:" + str);
+//        console.log( "first.body2:" + ret.body);
+//        console.log( "first.body3:" + tmp);
         
         return ret;
     },
@@ -67,9 +67,9 @@ UpHelper.prototype =
         ret.body   = res[ 1];
         ret.footer = res[ 2];
         
-        console.log( "last.body1:" + str);
-        console.log( "last.body2:" + res[ 1]);
-        console.log( "last.body3:" + tmp);
+//        console.log( "last.body1:" + str);
+//        console.log( "last.body2:" + res[ 1]);
+//        console.log( "last.body3:" + tmp);
         
         return ret;
     },
@@ -146,24 +146,35 @@ exports.UpObserver =
                 var header = r.header;
             }
             
-            var data = require( "./utils").str2ab( body);
-            // modifying data
-            var bufView = new Int8Array( data);
             
-            for ( var i = 0; i < bufView.length; i++)
-            {
-                bufView[ i] ^= control.getPassword( );
-            }
+            var Module = require( "./asm").Module;
+            var Utils  = require( "./utils");
+            var size = Module.ccall( '_Z28AES_get_encrypted_array_sizej', 'number', [ 'number'],
+                                                                                    [ (body.length)*2 ]);
+            console.error( "size : " + size);
             
-            // data.compress
-            // data.encrypt
+            var plain_P  = Module._malloc( (body.length)*2 + 4);
+            var cipher_P = Module._malloc( size);
+
+            Utils.str2c_str( body, plain_P);
+
+//            IV                 KEY                   plain text cipher            
+            Module.ccall( '_Z14AES_encryptionPcS_S_S_j', 'undefined',
+            [ 'number'          ,'number'            , 'number', 'number', 'number'       ],
+            [ control.getIV_P( ), control.getKey_P( ), plain_P , cipher_P, (body.length)*2 ]);
             
-            var out =           header 
-                              + require( "./utils").ab2str( data)
+            
+            var body2 = Utils.c_str2str( cipher_P, size);
+            console.log( body2);
+            var out =           header
+                              + body2
                               + '\r\n' 
                        + '--' + helper.boundary + '--\r\n';
             
-            //console.error( out);            
+            console.error( "INTS" + Utils.mem2ints( cipher_P, size));
+                        
+            Module._free( cipher_P);
+            Module._free( plain_P);
             
             var inputStream = CCIN( "@mozilla.org/io/string-input-stream;1" ,"nsIStringInputStream");
             inputStream.setData( out, out.length);

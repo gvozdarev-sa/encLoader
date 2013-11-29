@@ -13,7 +13,8 @@ var control = require( "./control");
 function TracingListener( )
 {
     this.originalListener = null;
-    this.receivedData = [ ];
+    this.receivedData = Array( );
+    this.receivedStr = "";
 }
 
 TracingListener.prototype =
@@ -21,37 +22,16 @@ TracingListener.prototype =
     onDataAvailable: function( request, context, inputStream, offset, count)
     {
         var binaryInputStream  = CCIN("@mozilla.org/binaryinputstream;1" ,"nsIBinaryInputStream");
-        var storageStream      = CCIN("@mozilla.org/storagestream;1", "nsIStorageStream");
-        var binaryOutputStream = CCIN("@mozilla.org/binaryoutputstream;1","nsIBinaryOutputStream");
+        binaryInputStream.setInputStream( inputStream);
 
-        binaryInputStream.setInputStream(inputStream);
-        storageStream.init( 8192, count, null);
-        binaryOutputStream.setOutputStream( storageStream.getOutputStream(0));
-
-        // Copy received data as they come.
-        var data  = binaryInputStream.readBytes( count);
-        var postData = new Array( );
+        var data  = binaryInputStream.readByteArray( count);
         
-        var buf = new ArrayBuffer( data.length); 
-        var bufView = new Int8Array( buf);
-        
-        for ( var i=0; i < bufView.length; i++)
+        for ( var i = 0; i < data.length; i++)
         {
-            bufView[ i] = data[ i].charCodeAt( 0);
+            this.receivedData.push( data[ i])
         }
 
-        // Must be in web worker
-        for( var i = 0; i < bufView.length; i++)
-        {
-            bufView[ i] ^= control.getPassword( );
-        }
-
-        for( var i = 0; i < bufView.length; i++)
-        {
-            binaryOutputStream.write8( bufView[ i]);
-        }
-
-        this.originalListener.onDataAvailable( request, context, storageStream.newInputStream( 0), offset, count);
+        console.log( "count " + count);
     },
 
     onStartRequest: function( request, context)
@@ -62,9 +42,52 @@ TracingListener.prototype =
     onStopRequest: function( request, context, statusCode)
     {
         // Get entire response
-        control.downloadFinish( );
-        //var responseSource = this.receivedData.join( );
+
+//        var binaryInputStream  = CCIN("@mozilla.org/binaryinputstream;1" ,"nsIBinaryInputStream");
+        var storageStream      = CCIN("@mozilla.org/storagestream;1", "nsIStorageStream");
+        var binaryOutputStream = CCIN("@mozilla.org/binaryoutputstream;1","nsIBinaryOutputStream");
+
+//        binaryInputStream.setInputStream(inputStream);
+        storageStream.init( 16384, this.receivedData.length, null);
+        binaryOutputStream.setOutputStream( storageStream.getOutputStream(0));
+
+        var postData = new Array( );
+        
+        console.log( "length: " + this.receivedData.length)
+                
+        var Module = require( "./asm").Module;
+        var Utils  = require( "./utils");
+        
+        var plain_P = Module._malloc( this.receivedData.length + 4);
+        var cipher_P = Module._malloc( this.receivedData.length);
+        
+        for( var i = 0; i < this.receivedData.length; i++)
+        {
+            Module.HEAPU8[ cipher_P + i] = this.receivedData[ i];
+        }
+
+        console.error( "INTS" + Utils.mem2ints( cipher_P, this.receivedData.length));
+
+
+        Module.ccall( '_Z14AES_decryptionPcS_S_jPj', 'undefined',
+        [ 'number'            , 'number', 'number', 'number', 'number' ],
+        [ control.getKey_P( ) , cipher_P , plain_P, this.receivedData.length, plain_P + this.receivedData.length]);
+        
+        var length = require( "./asm").getValue( plain_P + this.receivedData.length, 'i32');
+//        var length = this.receivedData.length - 32;
+        console.log( "New length: " + length);
+        
+        for( var i = 0; i < length; i+=2)
+        {
+            binaryOutputStream.write8( require( "./asm").getValue( plain_P + i, 'i16'));
+        }
+
+        Module._free( plain_P);
+        Module._free( cipher_P);
+
+        this.originalListener.onDataAvailable( request, context, storageStream.newInputStream( 0), 0, length/2);        
         this.originalListener.onStopRequest( request, context, statusCode);
+        control.downloadFinish( );
     },
 
     QueryInterface: function ( aIID)
