@@ -87,7 +87,7 @@ exports.getIV_P = function( )
 
 
     Module.ccall( '_Z9DeriveKeyPhPKhj', 'undefined', [ 'number',     'number',     'number'    ],
-                                                     [  settings.key_P, password_P, str.length*2]);
+                                                     [  settings.IV_P, password_P, str.length*2]);
 
     settings.IV = require( "./utils").ab2str( Module.HEAPU8.subarray( settings.IV_P, settings.IV_P + 32));
     console.info( "IV: " + settings.IV);

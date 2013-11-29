@@ -74,7 +74,10 @@ TracingListener.prototype =
         [ control.getKey_P( ) , cipher_P , plain_P, this.receivedData.length, plain_P + this.receivedData.length]);
         
         var length = require( "./asm").getValue( plain_P + this.receivedData.length, 'i32');
-//        var length = this.receivedData.length - 32;
+	if ( length <= 0 || length > this.receivedData.length)
+	{
+	    length = this.receivedData.length;
+	}
         console.log( "New length: " + length);
         
         for( var i = 0; i < length; i+=2)
