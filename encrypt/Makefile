@@ -33,7 +33,7 @@ EXPORT_JS= EXPORTED_FUNCTIONS="[ \
 '__Z9DeriveKeyPhPKhj' \
 ]"
 
-JSFLAGS= --closure 1 -v -s ASM_JS=1 -s $(EXPORT_JS)
+JSFLAGS= --closure 1 -s ASM_JS=1 -s $(EXPORT_JS)
 
 
 ifeq ( $(TARGET),JS)
@@ -48,7 +48,7 @@ else ifeq ($(TARGET),BC)
   FLAGS = $(CXXFLAGS) $(JSFLAGS)
   SUF = .bc
   CC = emcc
-else 
+else
   FLAGS = $(CXXFLAGS)
   SUF =exe -lpthread
   CC = g++
@@ -61,7 +61,7 @@ js: $(OBJS_JS)
 
 obj/src_%.o: src/%.cpp
 	$(CC) -c $(FLAGS) $< -o $@ $(INCLUDE)
-	
+
 obj/cryptopp_%.o: cryptopp/%.cpp
 	$(CC) -c $(FLAGS) $< -o $@ $(INCLUDE)
 
@@ -72,7 +72,7 @@ OBJS_TEST_DERIVE_KEY = $(OBJS_CRYPTOPP) obj/src_derive_key.o obj/tests_test_deri
 test_derive_key: $(OBJS_TEST_DERIVE_KEY)
 	$(CC) $(FLAGS) $(OBJS_TEST_DERIVE_KEY) -o test_derive_key$(SUF)
 
-OBJS_TEST_AES = $(OBJS_SRC) obj/tests_test_aes.o
+OBJS_TEST_AES = obj/src_AES.o obj/src_AES.o obj/src_AES_wrapper.o obj/src_Rijndael.o obj/tests_test_aes.o
 test_aes: $(OBJS_TEST_AES)
 	$(CC) $(FLAGS) $(OBJS_TEST_AES) -o test_aes$(SUF)
 
