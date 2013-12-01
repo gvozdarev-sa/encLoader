@@ -6,21 +6,23 @@ EXPORT_JS= EXPORTED_FUNCTIONS="[ \
 '__Z28AES_get_encrypted_array_sizej', \
 '__Z14AES_encryptionPcS_S_S_j', \
 '__Z14AES_decryptionPcS_S_jPj', \
-'__Z9DeriveKeyPhPKhj' \
+'__Z9DeriveKeyPhPKhj', \
+'__Z19get_compressed_sizem', \
+'__Z21get_decompressed_sizePc', \
+'__Z8CompressPKcmPcPm', \
+'__Z10DecompressPKcmPcPm', \
+'_main' \
 ]"
 
 JSFLAGS = --closure 1 -s ASM_JS=1 -s $(EXPORT_JS)
 
 FLAGS = $(CXXFLAGS) $(JSFLAGS)
 
-OBJS_ENCRYPT  = ./encrypt/obj/encrypt.bc
-#OBJS_COMPRESS = ./encrypt/obj/encrypt.bc
+OBJS  = ./cpp/obj/asm.bc
 
-$(OBJS_ENCRYPT):
-	cd encrypt && make all TARGET=BC
+$(OBJS):
+	cd cpp && make all TARGET=BC
 
-$(OBJS_COMPRESS):
-	cd compress && make all TARGET=BC
 
 OBJS = $(OBJS_ENCRYPT)
 
@@ -34,11 +36,10 @@ extension/src/lib/asm.js: $(OBJS)
 	echo "exports.getValue = v.getValue;" >> extension/src/lib/asm.js
 	echo "exports.setValue = v.setValue;" >> extension/src/lib/asm.js
 
-	UTF16ToString
 
 extension: asm.js
 	cd extension && make run
 
 
 clean:
-	cd encrypt && make clean
+	cd cpp && make clean

@@ -1,6 +1,6 @@
-/* 
+/*
  * Compression interface.
- * 
+ *
  * AUTHOR: Maramzin Alexander
  * GROUP: 016
  * DESCRIPTION:
@@ -19,9 +19,10 @@ typedef enum
     COMPRESS_LAST
 } CompressCode;
 
-unsigned long get_upper_size_bound( unsigned long input_size);
+unsigned long get_compressed_size( unsigned long inputSize);
+unsigned long get_decompressed_size( char * input);
 
-CompressCode Compress( const unsigned char *input, unsigned long input_size, unsigned char *output, unsigned long *output_size);
-CompressCode Decompress( const unsigned char *input, unsigned long input_size, unsigned char *output, unsigned long *output_size);
+CompressCode Compress( const  char *input, unsigned long input_size,  char *output, unsigned long *output_size);
+CompressCode Decompress( const  char *input, unsigned long input_size,  char *output, unsigned long *output_size);
 
 #endif // #ifndef COMPRESS_HPP

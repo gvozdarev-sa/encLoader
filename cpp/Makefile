@@ -23,18 +23,27 @@ _SRC := AES.o Rijndael.o AES_wrapper.o derive_key.o
 OBJS_SRC := $(patsubst %.o, obj/src_%.o, $(_SRC))
 SRCS_SRC := $(patsubst %.o, src/%.cpp, $(_SRC))
 
-INCLUDE = -Icryptopp -Isrc
+_DEFLATE :=  Compress.o
+OBJS_DEFLATE := $(patsubst %.o, obj/deflate_%.o, $(_DEFLATE))
+SRCS_DEFLATE := $(patsubst %.o, src/%.cpp, $(_DEFLATE))
+
+INCLUDE = -Icryptopp -Isrc -Ideflate
 CXXFLAGS= -O2
 
 EXPORT_JS= EXPORTED_FUNCTIONS="[ \
 '__Z28AES_get_encrypted_array_sizej', \
 '__Z14AES_encryptionPcS_S_S_j', \
 '__Z14AES_decryptionPcS_S_jPj', \
-'__Z9DeriveKeyPhPKhj' \
+'__Z9DeriveKeyPhPKhj', \
+'__Z19get_compressed_sizem', \
+'__Z21get_decompressed_sizePc', \
+'__Z8CompressPKcmPcPm', \
+'__Z10DecompressPKcmPcPm', \
+'_main' \
 ]"
 
 JSFLAGS= --closure 1 -s ASM_JS=1 -s $(EXPORT_JS)
-
+//JSFLAGS= -s ASM_JS=1 -s $(EXPORT_JS)
 
 ifeq ( $(TARGET),JS)
   FLAGS = $(CXXFLAGS) $(JSFLAGS)
@@ -50,14 +59,14 @@ else ifeq ($(TARGET),BC)
   CC = emcc
 else
   FLAGS = $(CXXFLAGS)
-  SUF =exe -lpthread
+  SUF = .exe -lpthread
   CC = g++
   #CC = clang
 endif
 
-OBJS_JS = $(OBJS_SRC) $(OBJS_CRYPTOPP)
+OBJS_JS = $(OBJS_SRC) $(OBJS_CRYPTOPP) $(OBJS_DEFLATE)
 js: $(OBJS_JS)
-	$(CC) $(FLAGS) $(OBJS_JS) -o obj/encrypt$(SUF)
+	$(CC) $(FLAGS) $(OBJS_JS) -o obj/asm$(SUF)
 
 obj/src_%.o: src/%.cpp
 	$(CC) -c $(FLAGS) $< -o $@ $(INCLUDE)
@@ -65,17 +74,23 @@ obj/src_%.o: src/%.cpp
 obj/cryptopp_%.o: cryptopp/%.cpp
 	$(CC) -c $(FLAGS) $< -o $@ $(INCLUDE)
 
-obj/tests_%.o: tests/%.cpp
+obj/deflate_%.o: deflate/%.cpp
+	$(CC) -c $(FLAGS) $< -o $@ $(INCLUDE)
+	
+obj/tests_%.o: tests/test_%.cpp
 	$(CC) -c $(FLAGS) $< -o $@ $(INCLUDE)
 
-OBJS_TEST_DERIVE_KEY = $(OBJS_CRYPTOPP) obj/src_derive_key.o obj/tests_test_derive_key.o
+OBJS_TEST_DERIVE_KEY = $(OBJS_CRYPTOPP) obj/src_derive_key.o obj/tests_derive_key.o
 test_derive_key: $(OBJS_TEST_DERIVE_KEY)
 	$(CC) $(FLAGS) $(OBJS_TEST_DERIVE_KEY) -o test_derive_key$(SUF)
 
-OBJS_TEST_AES = obj/src_AES.o obj/src_AES.o obj/src_AES_wrapper.o obj/src_Rijndael.o obj/tests_test_aes.o
+OBJS_TEST_AES = obj/src_AES.o obj/src_AES_wrapper.o obj/src_Rijndael.o obj/tests_aes.o
 test_aes: $(OBJS_TEST_AES)
 	$(CC) $(FLAGS) $(OBJS_TEST_AES) -o test_aes$(SUF)
 
+OBJS_TEST_DEFLATE = $(OBJS_DEFLATE) obj/tests_deflate.o
+test_deflate: $(OBJS_TEST_DEFLATE)
+	$(CC) $(FLAGS) $(OBJS_TEST_DEFLATE) -o test_deflate$(SUF)
 
 
 clean:
