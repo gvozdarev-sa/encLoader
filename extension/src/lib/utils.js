@@ -37,7 +37,7 @@ function str2c_str( str,pointer)
     var setValue = require( "./asm").setValue;
     for ( var i=0, strLen=str.length; i < strLen; i++)
     {
-        setValue( pointer + i * 2, str.charCodeAt( i), 'i16');
+        setValue( pointer + i, str.charCodeAt( i), 'i8');
     //    console.log( "set:" + str.charCodeAt( i));
     }    
 }
@@ -53,17 +53,7 @@ function c_str2str( pointer, length)
     }
     return ret;
 }
-// хз как назвать TODO переделать всё
-function c_str2strFULL( pointer, length)
-{
-    var ret = "";
-    var getValue = require( "./asm").getValue;
-    for ( var i=0; i < length; i+=2)
-    {
-        ret += String.fromCharCode( getValue( pointer + i, 'i16'));
-    }
-    return ret;
-}
+
 
 
 function mem2ints( pointer, length)

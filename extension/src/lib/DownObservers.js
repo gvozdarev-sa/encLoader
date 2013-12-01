@@ -41,19 +41,15 @@ TracingListener.prototype =
 
     onStopRequest: function( request, context, statusCode)
     {
-        // Get entire response
-
-//        var binaryInputStream  = CCIN("@mozilla.org/binaryinputstream;1" ,"nsIBinaryInputStream");
         var storageStream      = CCIN("@mozilla.org/storagestream;1", "nsIStorageStream");
         var binaryOutputStream = CCIN("@mozilla.org/binaryoutputstream;1","nsIBinaryOutputStream");
 
-//        binaryInputStream.setInputStream(inputStream);
         storageStream.init( 16384, this.receivedData.length, null);
         binaryOutputStream.setOutputStream( storageStream.getOutputStream(0));
 
         var postData = new Array( );
         
-        console.log( "length: " + this.receivedData.length)
+        console.log( "Start length: " + this.receivedData.length)
                 
         var Module = require( "./asm").Module;
         var Utils  = require( "./utils");
@@ -66,29 +62,47 @@ TracingListener.prototype =
             Module.HEAPU8[ cipher_P + i] = this.receivedData[ i];
         }
 
-        console.error( "INTS" + Utils.mem2ints( cipher_P, this.receivedData.length));
-
-
         Module.ccall( '_Z14AES_decryptionPcS_S_jPj', 'undefined',
         [ 'number'            , 'number', 'number', 'number', 'number' ],
         [ control.getKey_P( ) , cipher_P , plain_P, this.receivedData.length, plain_P + this.receivedData.length]);
         
-        var length = require( "./asm").getValue( plain_P + this.receivedData.length, 'i32');
-	if ( length <= 0 || length > this.receivedData.length)
-	{
-	    length = this.receivedData.length;
-	}
-        console.log( "New length: " + length);
-        
-        for( var i = 0; i < length; i+=2)
+        var compressed_length = require( "./asm").getValue( plain_P + this.receivedData.length, 'i32');
+        console.log( "Length after decryption: " + compressed_length);
+        if ( compressed_length <= 0 || compressed_length >this.receivedData.length)
         {
-            binaryOutputStream.write8( require( "./asm").getValue( plain_P + i, 'i16'));
+            control.wrongPassword( );
+
+            this.originalListener.onDataAvailable( request, context, storageStream.newInputStream( 0), 0, 0);        
+            this.originalListener.onStopRequest( request, context, statusCode);
+            control.downloadFinish( );
+            return;
+        }
+        ////////////////////////////////////////////////////////////////////////
+        
+        var decompressed_length = Module.ccall( '_Z21get_decompressed_sizePc', 'number', [ 'number'],
+                                                                                         [ plain_P ]);
+        console.log( "Expected decomressed length" + decompressed_length);                                                                                         
+        /////////////////////////////////////////////////////////////////////////
+        var compressed_P = plain_P;
+        plain_P = Module._realloc( cipher_P, decompressed_length);
+            
+        Module.ccall( '_Z10DecompressPKcmPcPm', 'undefined',
+        [ 'number',      'number'   , 'number', 'number'       ],
+        [ compressed_P , compressed_length, plain_P, plain_P + decompressed_length]);
+
+        var new_length = require( "./asm").getValue( plain_P + decompressed_length, 'i32');
+        console.error( "Real decompressed length " + new_length);
+        /////////////////////////////////////////////////////////////////////////
+
+        for( var i = 0; i < new_length; i++)
+        {
+            binaryOutputStream.write8( require( "./asm").getValue( plain_P + i, 'i8'));
         }
 
-        Module._free( plain_P);
-        Module._free( cipher_P);
+//        Module._free( plain_P);
+//        Module._free( compressed_P);
 
-        this.originalListener.onDataAvailable( request, context, storageStream.newInputStream( 0), 0, length/2);        
+        this.originalListener.onDataAvailable( request, context, storageStream.newInputStream( 0), 0, new_length);        
         this.originalListener.onStopRequest( request, context, statusCode);
         control.downloadFinish( );
     },

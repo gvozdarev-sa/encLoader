@@ -40,6 +40,12 @@ exports.isEnabled = function( )
     return settings.enabled;
 }
 
+exports.wrongPassword = function( )
+{
+    ui.downNotification( "IT'S SEEMS YOU USE WRONG PASSWORD, or error accured");
+}
+
+
 exports.downloadStart = function( item)
 {
     ui.downNotification( item);
@@ -110,7 +116,7 @@ exports.setPassword = function( str)
                                                      [  settings.key_P, password_P, str.length*2]);
 
     settings.password = require( "./utils").ab2str( Module.HEAPU8.subarray( settings.key_P, settings.key_P + 32));
-    console.info( "password: " + settings.password);
+    console.warn( "newkey" + require( "./utils").c_str2str( settings.key_P, 32));
 
     Module._free( password_P);
 }

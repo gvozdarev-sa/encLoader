@@ -50,10 +50,6 @@ UpHelper.prototype =
         ret.header = bodyHeader[ 1] + bodyHeader[ 2] + "Content-Type: application/octet-stream\r\n\r\n";
         ret.body = bodyHeader[ 4];
         
-//        console.log( "first.body1:" + str);
-//        console.log( "first.body2:" + ret.body);
-//        console.log( "first.body3:" + tmp);
-        
         return ret;
     },
     getFooter: function( str)
@@ -66,10 +62,6 @@ UpHelper.prototype =
         var ret = new Object( );
         ret.body   = res[ 1];
         ret.footer = res[ 2];
-        
-//        console.log( "last.body1:" + str);
-//        console.log( "last.body2:" + res[ 1]);
-//        console.log( "last.body3:" + tmp);
         
         return ret;
     },
@@ -145,33 +137,49 @@ exports.UpObserver =
                 var body = r.body;
                 var header = r.header;
             }
-            
-            
+            console.error( "original length: " + body.length);    
+            /////////////////////////////////////////////////////////////////////
             var Module = require( "./asm").Module;
             var Utils  = require( "./utils");
-            var size = Module.ccall( '_Z28AES_get_encrypted_array_sizej', 'number', [ 'number'],
-                                                                                    [ (body.length)*2 ]);
-            console.error( "size : " + size);
+            /////////////////////////////////////////////////////////////////////
+            var compressed_length = Module.ccall( '_Z19get_compressed_sizem', 'number',    [ 'number'],
+                                                                                   [ (body.length) ]);
             
-            var plain_P  = Module._malloc( (body.length)*2 + 4);
-            var cipher_P = Module._malloc( size);
-
+            var plain_P      = Module._malloc( body.length + 4);
+            var compressed_P = Module._malloc( compressed_length);
+            
             Utils.str2c_str( body, plain_P);
+            require( "./asm").setValue( plain_P + body.length, compressed_length, 'i32');
+            console.error( "max compressed length: " + compressed_length);
+            /////////////////////////////////////////////////////////////////////
+            Module.ccall( '_Z8CompressPKcmPcPm', 'undefined',
+            [ 'number', 'number'   , 'number', 'number'       ],
+            [ plain_P , body.length, compressed_P, plain_P + body.length]);
 
+            compressed_length = require( "./asm").getValue( plain_P + body.length, 'i32');
+            console.error( "real compressed length: " + compressed_length);
+            /////////////////////////////////////////////////////////////////////
+            var size = Module.ccall( '_Z28AES_get_encrypted_array_sizej', 'number', [ 'number'],
+                                                                                    [ compressed_length ]);
+            
+            var cipher_P = Module._realloc( plain_P, size);
+            plain_P = compressed_P;
+            console.error( "size after encryption : " + size);
+            /////////////////////////////////////////////////////////////////////
 //            IV                 KEY                   plain text cipher            
             Module.ccall( '_Z14AES_encryptionPcS_S_S_j', 'undefined',
             [ 'number'          ,'number'            , 'number', 'number', 'number'       ],
-            [ control.getIV_P( ), control.getKey_P( ), plain_P , cipher_P, (body.length)*2 ]);
+            [ control.getIV_P( ), control.getKey_P( ), plain_P , cipher_P, compressed_length]);
             
             
             var body2 = Utils.c_str2str( cipher_P, size);
-            console.log( body2);
+//            console.log( body2);
             var out =           header
                               + body2
                               + '\r\n' 
                        + '--' + helper.boundary + '--\r\n';
             
-            console.error( "INTS" + Utils.mem2ints( cipher_P, size));
+            //console.error( "INTS" + Utils.mem2ints( cipher_P, size));
                         
             Module._free( cipher_P);
             Module._free( plain_P);
